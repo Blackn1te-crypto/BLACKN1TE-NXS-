@@ -40,9 +40,10 @@ const MY_CHANNEL_JID = '120363414192571475@newsletter';
 const MY_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbDubJNHbFV50Y6oiO3f';
 const MY_CHANNEL_NAME = 'BL@CKN1TE-NXS Official';
 
+// YOUR NUMBERS (Digits only for accurate matching)
 const OWNER_NUMBERS = [
-    "+263714799483",
-    "+263780540231"
+    "263714799483",
+    "263780540231"
 ];
 
 const WATERMARK = "\n\n> 🌟 *Powered by BL@CKN1TE THE INCISIVE TRI-HAT HACKER* 🌟";
@@ -54,9 +55,20 @@ const RANDOM_REACTIONS = ['⚡', '🔥', '✨', '🌟', '💫', '🎯', '🚀', 
 function getRandomEmoji() { return RANDOM_REACTIONS[Math.floor(Math.random() * RANDOM_REACTIONS.length)]; }
 
 // ============================================================
-// DYNAMIC COMMAND LOADER (Loads all 140+ commands safely)
+// DYNAMIC COMMAND LOADER & ALIASES
 // ============================================================
 const commands = {};
+const aliases = {
+    'img': 'image',
+    'play': 'song',
+    'download': 'song',
+    'ytmp4': 'video',
+    'ig': 'insta',
+    'fb': 'facebook',
+    'trt': 'translate',
+    'alive': 'ping'
+};
+
 function loadCommands() {
     if (!fs.existsSync(CMD_DIR)) {
         fs.ensureDirSync(CMD_DIR);
@@ -304,6 +316,13 @@ class BotSession {
                 if (!msg.message) return;
 
                 const from = msg.key.remoteJid;
+                const senderId = msg.key.participant || msg.key.remoteJid;
+                
+                // === OWNER & ADMIN IDENTIFICATION ===
+                const senderNumber = senderId.split('@')[0].replace(/[^0-9]/g, '');
+                const isOwner = msg.key.fromMe || OWNER_NUMBERS.includes(senderNumber);
+                const isGroup = from.endsWith('@g.us');
+
                 const text = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || '').trim();
                 const cmd = text.toLowerCase();
                 const args = text.split(' ').slice(1);
@@ -312,27 +331,37 @@ class BotSession {
                 const matchedPrefix = PREFIXES.find(p => cmd.startsWith(p));
                 if (!matchedPrefix) return;
 
-                const commandName = cmd.slice(matchedPrefix.length).split(' ')[0];
+                let commandName = cmd.slice(matchedPrefix.length).split(' ')[0];
 
                 // Send Random Emoji Reaction
                 try { await this.sock.sendMessage(from, { react: { text: getRandomEmoji(), key: msg.key } }); } catch (e) {}
 
+                // Handle Menu
                 if (commandName === 'menu' || commandName === 'help' || commandName === 'start') {
                     return await sendUltimateMenu(this.sock, from, msg, this, msg.pushName || 'User');
                 }
                 
+                // Handle Owner
                 if (commandName === 'owner') {
-                    return await this.sock.sendMessage(from, { text: `👑 *BL@CKN1TE-NXS OWNER*\n\n📞 ${OWNER_NUMBERS[0]}\n📞 ${OWNER_NUMBERS[1]}${WATERMARK}` }, { quoted: msg });
+                    return await this.sock.sendMessage(from, { text: `👑 *BL@CKN1TE-NXS OWNER*\n\n📞 +263714799483\n📞 +263780540231${WATERMARK}` }, { quoted: msg });
                 }
 
+                // Resolve Aliases (e.g., 'img' -> 'image')
+                if (aliases[commandName] && commands[aliases[commandName]]) {
+                    commandName = aliases[commandName];
+                }
+
+                // Execute Command
                 if (commands[commandName]) {
                     try {
-                        await commands[commandName](this.sock, from, msg, q, this, botData, saveBotData, args);
+                        // We pass isOwner, isGroup, and senderId so the command NEVER fails to know who you are
+                        await commands[commandName](this.sock, from, msg, q, this, botData, saveBotData, args, isOwner, isGroup, senderId);
                     } catch (e) { 
                         this.sendLog(`Error .${commandName}: ${e.message}`, 'error'); 
-                        await this.sock.sendMessage(from, { text: `⚠️ *Command .${commandName} failed.*${WATERMARK}` }, { quoted: msg });
+                        await this.sock.sendMessage(from, { text: `⚠️ *Command .${commandName} encountered an error.*${WATERMARK}` }, { quoted: msg });
                     }
                 } else {
+                    // Fallback if command doesn't exist
                     await this.sock.sendMessage(from, { text: `⚠️ *Command .${commandName} not found.*${WATERMARK}` }, { quoted: msg });
                 }
             });
