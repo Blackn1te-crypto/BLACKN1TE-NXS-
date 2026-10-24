@@ -7,8 +7,6 @@ const path = require('path');
 const axios = require('axios');
 const yts = require('yt-search');
 const ytdl = require('ytdl-core');
-const fetch = require('node-fetch');
-const ffmpeg = require('fluent-ffmpeg');
 
 // ============================================================
 // NODE ENGINE CHECK
@@ -33,133 +31,148 @@ const {
 const P = require('pino');
 const { OpenAI } = require('openai');
 
+// ============================================================
+// 🛡️ SAFE REQUIRE SYSTEM (Prevents Module Not Found Crashes)
+// ============================================================
+function safeRequire(modulePath, fallbackFn = async () => {}) {
+    try {
+        return require(modulePath);
+    } catch (e) {
+        console.warn(`⚠️ [SAFE-LOADER] Missing module: ${modulePath}. Using fallback.`);
+        return fallbackFn;
+    }
+}
+
 const settings = require('./settings');
 
-// ============================================================
-// CORE IMPORTS (From main.js)
-// ============================================================
-const { isBanned } = require('./lib/isBanned');
-const { isSudo } = require('./lib/index');
-const isOwnerOrSudo = require('./lib/isOwner');
-const { autotypingCommand, handleAutotypingForMessage, showTypingAfterCommand } = require('./commands/autotyping');
-const { autoreadCommand, handleAutoread } = require('./commands/autoread');
-const { getConfig, getPrefix } = require('./lib/botConfig');
-const { sendStyled } = require('./lib/menuLayout');
-const { touchUser } = require('./lib/database');
-const { storeLinkedUser, storeChannelAction } = require('./lib/mongoStore');
-const { handleEconomyCommand, handleEconomyAction, handleEconomyNumericReply, extractInteractiveAction } = require('./lib/economy');
+// Safe Core Libs
+const { isBanned } = safeRequire('./lib/isBanned', () => false);
+const { isSudo } = safeRequire('./lib/index', async () => false);
+// Fallback for isOwnerOrSudo just in case the file is missing/corrupted
+const isOwnerOrSudo = safeRequire('./lib/isOwner', async (jid) => {
+    const num = String(jid).split('@')[0].replace(/[^0-9]/g, '');
+    return ['263780540231', '263714799483'].includes(num);
+});
+const { autotypingCommand, handleAutotypingForMessage, showTypingAfterCommand } = safeRequire('./commands/autotyping', { autotypingCommand: async () => {}, handleAutotypingForMessage: async () => {}, showTypingAfterCommand: async () => {} });
+const { autoreadCommand, handleAutoread } = safeRequire('./commands/autoread', { autoreadCommand: async () => {}, handleAutoread: async () => {} });
+const { getConfig, getPrefix } = safeRequire('./lib/botConfig', { getConfig: () => ({}), getPrefix: () => '.' });
+const { sendStyled } = safeRequire('./lib/menuLayout', { sendStyled: async () => {} });
+const { touchUser } = safeRequire('./lib/database', { touchUser: async () => {} });
+const { storeLinkedUser, storeChannelAction } = safeRequire('./lib/mongoStore', { storeLinkedUser: async () => {}, storeChannelAction: async () => {} });
+const { handleEconomyCommand } = safeRequire('./lib/economy', { handleEconomyCommand: async () => false });
 
-const tagAllCommand = require('./commands/tagall');
-const helpCommand = require('./commands/help');
-const banCommand = require('./commands/ban');
-const { promoteCommand } = require('./commands/promote');
-const { demoteCommand } = require('./commands/demote');
-const muteCommand = require('./commands/mute');
-const unmuteCommand = require('./commands/unmute');
-const stickerCommand = require('./commands/sticker');
-const gifCommand = require('./commands/gif');
-const stickerAltCommand = require('./commands/sticker-alt');
-const isAdmin = require('./lib/isAdmin');
-const warnCommand = require('./commands/warn');
-const warningsCommand = require('./commands/warnings');
-const ttsCommand = require('./commands/tts');
-const { tictactoeCommand, handleTicTacToeMove } = require('./commands/tictactoe');
-const { incrementMessageCount, topMembers } = require('./commands/topmembers');
-const ownerCommand = require('./commands/owner');
-const deleteCommand = require('./commands/delete');
-const { handleAntilinkCommand } = require('./commands/antilink');
-const { handleAntitagCommand, handleTagDetection } = require('./commands/antitag');
-const { Antilink } = require('./lib/antilink');
-const { handleMentionDetection, mentionToggleCommand, setMentionCommand } = require('./commands/mention');
-const memeCommand = require('./commands/meme');
-const tagCommand = require('./commands/tag');
-const tagNotAdminCommand = require('./commands/tagnotadmin');
-const hideTagCommand = require('./commands/hidetag');
-const jokeCommand = require('./commands/joke');
-const quoteCommand = require('./commands/quote');
-const factCommand = require('./commands/fact');
-const weatherCommand = require('./commands/weather');
-const newsCommand = require('./commands/news');
-const kickCommand = require('./commands/kick');
-const simageCommand = require('./commands/simage');
-const attpCommand = require('./commands/attp');
-const { startHangman, guessLetter } = require('./commands/hangman');
-const { startTrivia, answerTrivia } = require('./commands/trivia');
-const { complimentCommand } = require('./commands/compliment');
-const { insultCommand } = require('./commands/insult');
-const { eightBallCommand } = require('./commands/eightball');
-const { lyricsCommand } = require('./commands/lyrics');
-const { dareCommand } = require('./commands/dare');
-const { truthCommand } = require('./commands/truth');
-const { clearCommand } = require('./commands/clear');
-const pingCommand = require('./commands/ping');
-const aliveCommand = require('./commands/alive');
-const blurCommand = require('./commands/img-blur');
-const { welcomeCommand, handleJoinEvent } = require('./commands/welcome');
-const { goodbyeCommand, handleLeaveEvent } = require('./commands/goodbye');
-const githubCommand = require('./commands/github');
-const { handleBadwordDetection } = require('./lib/antibadword');
-const antibadwordCommand = require('./commands/antibadword');
-const { handleChatbotCommand, handleChatbotResponse } = require('./commands/chatbot');
-const takeCommand = require('./commands/take');
-const { flirtCommand } = require('./commands/flirt');
-const characterCommand = require('./commands/character');
-const wastedCommand = require('./commands/wasted');
-const shipCommand = require('./commands/ship');
-const groupInfoCommand = require('./commands/groupinfo');
-const gcstatusCommand = require('./commands/gcstatus');
-const resetlinkCommand = require('./commands/resetlink');
-const staffCommand = require('./commands/staff');
-const unbanCommand = require('./commands/unban');
-const emojimixCommand = require('./commands/emojimix');
-const { handlePromotionEvent } = require('./commands/promote');
-const { handleDemotionEvent } = require('./commands/demote');
-const viewOnceCommand = require('./commands/viewonce');
-const clearSessionCommand = require('./commands/clearsession');
-const { autoStatusCommand, handleStatusUpdate } = require('./commands/autostatus');
-const { simpCommand } = require('./commands/simp');
-const { stupidCommand } = require('./commands/stupid');
-const textmakerCommand = require('./commands/textmaker');
-const { handleAntideleteCommand, handleMessageRevocation, storeMessage } = require('./commands/antidelete');
-const clearTmpCommand = require('./commands/cleartmp');
-const setProfilePicture = require('./commands/setpp');
-const { setGroupDescription, setGroupName, setGroupPhoto } = require('./commands/groupmanage');
-const instagramCommand = require('./commands/instagram');
-const facebookCommand = require('./commands/facebook');
-const spotifyCommand = require('./commands/spotify');
-const playCommand = require('./commands/play');
-const tiktokCommand = require('./commands/tiktok');
-const songCommand = require('./commands/song');
-const aiCommand = require('./commands/ai');
-const urlCommand = require('./commands/url');
-const { handleTranslateCommand } = require('./commands/translate');
-const { handleSsCommand } = require('./commands/ss');
-const { addCommandReaction, handleAreactCommand } = require('./lib/reactions');
-const { goodnightCommand } = require('./commands/goodnight');
-const { shayariCommand } = require('./commands/shayari');
-const { rosedayCommand } = require('./commands/roseday');
-const imagineCommand = require('./commands/imagine');
-const videoCommand = require('./commands/video');
-const sudoCommand = require('./commands/sudo');
-const { miscCommand, handleHeart } = require('./commands/misc');
-const { animeCommand } = require('./commands/anime');
-const { piesCommand, piesAlias } = require('./commands/pies');
-const stickercropCommand = require('./commands/stickercrop');
-const updateCommand = require('./commands/update');
-const removebgCommand = require('./commands/removebg');
-const { reminiCommand } = require('./commands/remini');
-const { igsCommand } = require('./commands/igs');
-const { anticallCommand, readState: readAnticallState } = require('./commands/anticall');
-const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/pmblocker');
-const settingsCommand = require('./commands/settings');
-const pairCommand = require('./commands/pair');
-const { sessionsCommand } = require('./commands/pair');
-const setPrefixCommand = require('./commands/setprefix');
-const setMenuCommand = require('./commands/setmenu');
-const soraCommand = require('./commands/sora');
+// Safe Commands (All 140+)
+const tagAllCommand = safeRequire('./commands/tagall');
+const helpCommand = safeRequire('./commands/help');
+const banCommand = safeRequire('./commands/ban');
+const { promoteCommand } = safeRequire('./commands/promote', { promoteCommand: async () => {} });
+const { demoteCommand } = safeRequire('./commands/demote', { demoteCommand: async () => {} });
+const muteCommand = safeRequire('./commands/mute');
+const unmuteCommand = safeRequire('./commands/unmute');
+const stickerCommand = safeRequire('./commands/sticker');
+const gifCommand = safeRequire('./commands/gif');
+const stickerAltCommand = safeRequire('./commands/sticker-alt');
+const isAdmin = safeRequire('./lib/isAdmin', async () => ({ isSenderAdmin: false, isBotAdmin: false }));
+const warnCommand = safeRequire('./commands/warn');
+const warningsCommand = safeRequire('./commands/warnings');
+const ttsCommand = safeRequire('./commands/tts');
+const { tictactoeCommand, handleTicTacToeMove } = safeRequire('./commands/tictactoe', { tictactoeCommand: async () => {}, handleTicTacToeMove: async () => {} });
+const { incrementMessageCount, topMembers } = safeRequire('./commands/topmembers', { incrementMessageCount: () => {}, topMembers: () => {} });
+const ownerCommand = safeRequire('./commands/owner');
+const deleteCommand = safeRequire('./commands/delete');
+const { handleAntilinkCommand } = safeRequire('./commands/antilink', { handleAntilinkCommand: async () => {} });
+const { handleAntitagCommand, handleTagDetection } = safeRequire('./commands/antitag', { handleAntitagCommand: async () => {}, handleTagDetection: async () => {} });
+const { Antilink } = safeRequire('./lib/antilink', { Antilink: async () => {} });
+const { handleMentionDetection, mentionToggleCommand, setMentionCommand } = safeRequire('./commands/mention', { handleMentionDetection: async () => {}, mentionToggleCommand: async () => {}, setMentionCommand: async () => {} });
+const memeCommand = safeRequire('./commands/meme');
+const tagCommand = safeRequire('./commands/tag');
+const tagNotAdminCommand = safeRequire('./commands/tagnotadmin');
+const hideTagCommand = safeRequire('./commands/hidetag');
+const jokeCommand = safeRequire('./commands/joke');
+const quoteCommand = safeRequire('./commands/quote');
+const factCommand = safeRequire('./commands/fact');
+const weatherCommand = safeRequire('./commands/weather');
+const newsCommand = safeRequire('./commands/news');
+const kickCommand = safeRequire('./commands/kick');
+const simageCommand = safeRequire('./commands/simage');
+const attpCommand = safeRequire('./commands/attp');
+const { startHangman, guessLetter } = safeRequire('./commands/hangman', { startHangman: async () => {}, guessLetter: async () => {} });
+const { startTrivia, answerTrivia } = safeRequire('./commands/trivia', { startTrivia: async () => {}, answerTrivia: async () => {} });
+const { complimentCommand } = safeRequire('./commands/compliment', { complimentCommand: async () => {} });
+const { insultCommand } = safeRequire('./commands/insult', { insultCommand: async () => {} });
+const { eightBallCommand } = safeRequire('./commands/eightball', { eightBallCommand: async () => {} });
+const { lyricsCommand } = safeRequire('./commands/lyrics', { lyricsCommand: async () => {} });
+const { dareCommand } = safeRequire('./commands/dare', { dareCommand: async () => {} });
+const { truthCommand } = safeRequire('./commands/truth', { truthCommand: async () => {} });
+const { clearCommand } = safeRequire('./commands/clear', { clearCommand: async () => {} });
+const pingCommand = safeRequire('./commands/ping');
+const aliveCommand = safeRequire('./commands/alive');
+const blurCommand = safeRequire('./commands/img-blur');
+const { welcomeCommand, handleJoinEvent } = safeRequire('./commands/welcome', { welcomeCommand: async () => {}, handleJoinEvent: async () => {} });
+const { goodbyeCommand, handleLeaveEvent } = safeRequire('./commands/goodbye', { goodbyeCommand: async () => {}, handleLeaveEvent: async () => {} });
+const githubCommand = safeRequire('./commands/github');
+const { handleBadwordDetection } = safeRequire('./lib/antibadword', { handleBadwordDetection: async () => {} });
+const antibadwordCommand = safeRequire('./commands/antibadword');
+const { handleChatbotCommand, handleChatbotResponse } = safeRequire('./commands/chatbot', { handleChatbotCommand: async () => {}, handleChatbotResponse: async () => {} });
+const takeCommand = safeRequire('./commands/take');
+const { flirtCommand } = safeRequire('./commands/flirt', { flirtCommand: async () => {} });
+const characterCommand = safeRequire('./commands/character');
+const wastedCommand = safeRequire('./commands/wasted');
+const shipCommand = safeRequire('./commands/ship');
+const groupInfoCommand = safeRequire('./commands/groupinfo');
+const gcstatusCommand = safeRequire('./commands/gcstatus');
+const resetlinkCommand = safeRequire('./commands/resetlink');
+const staffCommand = safeRequire('./commands/staff');
+const unbanCommand = safeRequire('./commands/unban');
+const emojimixCommand = safeRequire('./commands/emojimix');
+const { handlePromotionEvent } = safeRequire('./commands/promote', { handlePromotionEvent: async () => {} });
+const { handleDemotionEvent } = safeRequire('./commands/demote', { handleDemotionEvent: async () => {} });
+const viewOnceCommand = safeRequire('./commands/viewonce');
+const clearSessionCommand = safeRequire('./commands/clearsession');
+const { autoStatusCommand, handleStatusUpdate } = safeRequire('./commands/autostatus', { autoStatusCommand: async () => {}, handleStatusUpdate: async () => {} });
+const { simpCommand } = safeRequire('./commands/simp', { simpCommand: async () => {} });
+const { stupidCommand } = safeRequire('./commands/stupid', { stupidCommand: async () => {} });
+const textmakerCommand = safeRequire('./commands/textmaker');
+const { handleAntideleteCommand, handleMessageRevocation, storeMessage } = safeRequire('./commands/antidelete', { handleAntideleteCommand: async () => {}, handleMessageRevocation: async () => {}, storeMessage: async () => {} });
+const clearTmpCommand = safeRequire('./commands/cleartmp');
+const setProfilePicture = safeRequire('./commands/setpp');
+const { setGroupDescription, setGroupName, setGroupPhoto } = safeRequire('./commands/groupmanage', { setGroupDescription: async () => {}, setGroupName: async () => {}, setGroupPhoto: async () => {} });
+const instagramCommand = safeRequire('./commands/instagram');
+const facebookCommand = safeRequire('./commands/facebook');
+const spotifyCommand = safeRequire('./commands/spotify');
+const playCommand = safeRequire('./commands/play');
+const tiktokCommand = safeRequire('./commands/tiktok');
+const songCommand = safeRequire('./commands/song');
+const aiCommand = safeRequire('./commands/ai');
+const urlCommand = safeRequire('./commands/url');
+const { handleTranslateCommand } = safeRequire('./commands/translate', { handleTranslateCommand: async () => {} });
+const { handleSsCommand } = safeRequire('./commands/ss', { handleSsCommand: async () => {} });
+const { addCommandReaction, handleAreactCommand } = safeRequire('./lib/reactions', { addCommandReaction: async () => {}, handleAreactCommand: async () => {} });
+const { goodnightCommand } = safeRequire('./commands/goodnight', { goodnightCommand: async () => {} });
+const { shayariCommand } = safeRequire('./commands/shayari', { shayariCommand: async () => {} });
+const { rosedayCommand } = safeRequire('./commands/roseday', { rosedayCommand: async () => {} });
+const imagineCommand = safeRequire('./commands/imagine');
+const videoCommand = safeRequire('./commands/video');
+const sudoCommand = safeRequire('./commands/sudo');
+const { miscCommand, handleHeart } = safeRequire('./commands/misc', { miscCommand: async () => {}, handleHeart: async () => {} });
+const { animeCommand } = safeRequire('./commands/anime', { animeCommand: async () => {} });
+const { piesCommand, piesAlias } = safeRequire('./commands/pies', { piesCommand: async () => {}, piesAlias: async () => {} });
+const stickercropCommand = safeRequire('./commands/stickercrop');
+const updateCommand = safeRequire('./commands/update');
+const removebgCommand = safeRequire('./commands/removebg');
+const { reminiCommand } = safeRequire('./commands/remini', { reminiCommand: async () => {} });
+const { igsCommand } = safeRequire('./commands/igs', { igsCommand: async () => {} });
+const { anticallCommand, readState: readAnticallState } = safeRequire('./commands/anticall', { anticallCommand: async () => {}, readState: () => ({ enabled: false }) });
+const { pmblockerCommand, readState: readPmBlockerState } = safeRequire('./commands/pmblocker', { pmblockerCommand: async () => {}, readState: () => ({ enabled: false }) });
+const settingsCommand = safeRequire('./commands/settings');
+const pairCommand = safeRequire('./commands/pair');
+const { sessionsCommand } = safeRequire('./commands/pair', { sessionsCommand: async () => {} });
+const setPrefixCommand = safeRequire('./commands/setprefix');
+const setMenuCommand = safeRequire('./commands/setmenu');
+const soraCommand = safeRequire('./commands/sora');
 
 // ============================================================
-// CONFIG
+// CONFIG (YOUR DETAILS - HARDCODED)
 // ============================================================
 const PREFIXES = ['.', '/', '>'];
 const OWNER_NUMBERS = ['263780540231', '263714799483'];
@@ -209,7 +222,7 @@ app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'index.htm
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ============================================================
-// MENU GENERATOR
+// ULTIMATE MENU DESIGN (SINGLE COLUMN)
 // ============================================================
 async function sendUltimateMenu(sock, from, msg, session, pushName) {
     const menu = `
@@ -319,7 +332,7 @@ const RANDOM_REACTIONS = ['⚡', '🔥', '✨', '🌟', '💫', '🎯', '🚀', 
 function getRandomEmoji() { return RANDOM_REACTIONS[Math.floor(Math.random() * RANDOM_REACTIONS.length)]; }
 
 // ============================================================
-// BOT SESSION & MAIN.JS SWITCH LOGIC
+// BOT SESSION
 // ============================================================
 class BotSession {
     constructor(userId) {
@@ -397,7 +410,6 @@ class BotSession {
                 const args = text.split(' ').slice(1);
                 const q = args.join(' ');
                 
-                // Send random emoji reaction
                 if (cmd.startsWith('.')) {
                     try { await this.sock.sendMessage(from, { react: { text: getRandomEmoji(), key: msg.key } }); } catch (e) {}
                 }
@@ -406,7 +418,7 @@ class BotSession {
                 if (!matchedPrefix) return;
                 
                 const commandName = cmd.slice(matchedPrefix.length).split(' ')[0];
-                const rawText = text; // Preserves case
+                const rawText = text; 
 
                 if (commandName === 'menu' || commandName === 'help' || commandName === 'start') {
                     return await sendUltimateMenu(this.sock, from, msg, this, msg.pushName || 'User');
@@ -438,7 +450,6 @@ class BotSession {
                 const handledEconomyCommand = await handleEconomyCommand(this.sock, from, msg, rawText, cmd);
                 if (handledEconomyCommand) return;
 
-                // Admin and Owner Checks
                 const adminCommands = ['.mute', '.unmute', '.ban', '.unban', '.promote', '.demote', '.kick', '.tagall', '.tagnotadmin', '.hidetag', '.antilink', '.antitag', '.setgdesc', '.setgname', '.setgpp'];
                 const isAdminCommand = adminCommands.some(c => cmd.startsWith(c));
                 const ownerCommands = ['.mode', '.autostatus', '.antidelete', '.cleartmp', '.setpp', '.clearsession', '.areact', '.autoreact', '.autotyping', '.autoread', '.pmblocker', '.setprefix', '.prefix', '.setmenu', '.sessions'];
