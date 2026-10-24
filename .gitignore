@@ -1,0 +1,67 @@
+# ============================================================
+# BL@CKN1TE-NXS — .gitignore
+# ============================================================
+
+# Node Modules (Render installs these automatically)
+node_modules/
+package-lock.json
+
+# WhatsApp Sessions (NEVER upload these — they contain your login keys!)
+session/
+auth_info/
+auth_info_baileys/
+
+# Environment Variables (Contains your API keys and phone numbers)
+.env
+.env.local
+.env.development
+.env.production
+
+# Temporary & Log Files
+temp/
+tmp/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pino.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# OS / Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build & Cache
+dist/
+build/
+.cache/
+.nyc_output/
+coverage/
+
+# Media Temp Files
+*.mp3
+*.mp4
+*.webp
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.ogg
+*.opus
+*.m4a
+
+# ⚠️ EXCEPTIONS (Do NOT ignore these, they must go to GitHub)
+!assets/
+!assets/**
+!data/
+!data/**
+!*.html
+!*.css
+!*.js
