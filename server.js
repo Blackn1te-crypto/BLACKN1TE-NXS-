@@ -80,6 +80,7 @@ function safeRequire(filePath, name) {
     }
 }
 
+// ALL 140+ COMMANDS SYNCED
 const commands = {
     ping: safeRequire(path.join(CMD_DIR, 'ping'), 'ping'),
     owner: safeRequire(path.join(CMD_DIR, 'owner'), 'owner'),
@@ -285,7 +286,6 @@ async function sendBeautifulMenu(sock, from, msg, session, botData, customName) 
                 contextInfo: {
                     forwardingScore: 999,
                     isForwarded: true,
-                    // FIXED: HARDCODED YOUR CHANNEL JID HERE
                     forwardedNewsletterMessageInfo: {
                         newsletterJid: MY_CHANNEL_JID,
                         newsletterName: MY_CHANNEL_NAME,
@@ -298,7 +298,7 @@ async function sendBeautifulMenu(sock, from, msg, session, botData, customName) 
                         thumbnail: fs.readFileSync(menuImagePath),
                         mediaUrl: MY_CHANNEL_URL,
                         sourceUrl: MY_CHANNEL_URL,
-                        renderLargerThumbnail: false // Top right image
+                        renderLargerThumbnail: false
                     }
                 }
             }, { quoted: msg });
