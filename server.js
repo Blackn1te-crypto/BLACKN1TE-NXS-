@@ -41,6 +41,7 @@ const MY_CHANNEL_JID = '120363414192571475@newsletter';
 const MY_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbDubJNHbFV50Y6oiO3f';
 const MY_CHANNEL_NAME = 'BL@CKN1TE-NXS Official';
 
+// YOUR NUMBERS
 const OWNER_NUMBERS = [
     "263714799483",
     "263780540231"
@@ -55,20 +56,9 @@ const RANDOM_REACTIONS = ['⚡', '🔥', '✨', '🌟', '💫', '🎯', '🚀', 
 function getRandomEmoji() { return RANDOM_REACTIONS[Math.floor(Math.random() * RANDOM_REACTIONS.length)]; }
 
 // ============================================================
-// DYNAMIC COMMAND LOADER & ALIASES
+// DYNAMIC COMMAND LOADER
 // ============================================================
 const commands = {};
-const aliases = {
-    'img': 'image',
-    'play': 'song',
-    'download': 'song',
-    'ytmp4': 'video',
-    'ig': 'insta',
-    'fb': 'facebook',
-    'trt': 'translate',
-    'alive': 'ping'
-};
-
 function loadCommands() {
     if (!fs.existsSync(CMD_DIR)) {
         fs.ensureDirSync(CMD_DIR);
@@ -258,9 +248,7 @@ ${WATERMARK}
                 }
             }
         });
-    } catch (e) {
-        console.error("Banner send error:", e.message);
-    }
+    } catch (e) {}
 }
 
 // ============================================================
@@ -312,15 +300,19 @@ class BotSession {
 
             this.sock.ev.on('creds.update', saveCreds);
 
-            // ============================================================
-            // MESSAGE LISTENER (COMMANDS)
-            // ============================================================
             this.sock.ev.on('messages.upsert', async (m) => {
                 if (m.type !== 'notify') return;
                 const msg = m.messages[0];
                 if (!msg.message) return;
 
                 const from = msg.key.remoteJid;
+                const isMe = msg.key.fromMe;
+                const senderId = msg.key.participant || from;
+                
+                // STRICT OWNER CHECK
+                const senderNumber = senderId.split('@')[0].replace(/[^0-9]/g, '');
+                const isOwner = isMe || OWNER_NUMBERS.includes(senderNumber);
+
                 const text = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || '').trim();
                 const cmd = text.toLowerCase();
                 const args = text.split(' ').slice(1);
@@ -334,6 +326,10 @@ class BotSession {
                 // Send Random Emoji Reaction
                 try { await this.sock.sendMessage(from, { react: { text: getRandomEmoji(), key: msg.key } }); } catch (e) {}
 
+                // ==========================================
+                // HARDCODED COMMANDS (BYPASS FOLDER LOGIC)
+                // ==========================================
+                
                 if (commandName === 'menu' || commandName === 'help' || commandName === 'start') {
                     return await sendUltimateMenu(this.sock, from, msg, this, msg.pushName || 'User');
                 }
@@ -342,41 +338,123 @@ class BotSession {
                     return await this.sock.sendMessage(from, { text: `👑 *BL@CKN1TE-NXS OWNER*\n\n📞 ${OWNER_NUMBERS[0]}\n📞 ${OWNER_NUMBERS[1]}${WATERMARK}` }, { quoted: msg });
                 }
 
+                // --- PUBLIC / PRIVATE MODE ---
+                if (commandName === 'public' || commandName === 'private') {
+                    if (!isOwner) return await this.sock.sendMessage(from, { text: `❌ *Only owner can use this command.*` }, { quoted: msg });
+                    
+                    const isPublic = commandName === 'public';
+                    const dataPath = './data/messageCount.json';
+                    let data = { isPublic: true };
+                    if (fs.existsSync(dataPath)) { try { data = JSON.parse(fs.readFileSync(dataPath)); } catch (e) {} }
+                    data.isPublic = isPublic;
+                    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+                    
+                    return await this.sock.sendMessage(from, { text: `✅ *Bot mode changed to ${commandName.toUpperCase()}*${WATERMARK}` }, { quoted: msg });
+                }
+
+                // --- STATUS COMMAND ---
+                if (commandName === 'status' || commandName === 'autostatus') {
+                    if (!isOwner) return await this.sock.sendMessage(from, { text: `❌ *Only owner can use this command.*` }, { quoted: msg });
+                    
+                    const action = args[0]?.toLowerCase();
+                    if (action === 'on' || action === 'off') {
+                        if (!botData.statusSettings[this.userId]) botData.statusSettings[this.userId] = {};
+                        botData.statusSettings[this.userId].autoStatus = action === 'on';
+                        saveBotData();
+                        return await this.sock.sendMessage(from, { text: `✅ *Auto-Status is now ${action.toUpperCase()}*${WATERMARK}` }, { quoted: msg });
+                    } else {
+                        const current = botData.statusSettings[this.userId]?.autoStatus ? 'ON' : 'OFF';
+                        return await this.sock.sendMessage(from, { 
+                            text: `📊 *STATUS SETTINGS*\n\nCurrent: *${current}*\n\nUsage:\n.status on\n.status off${WATERMARK}` 
+                        }, { quoted: msg });
+                    }
+                }
+
+                // --- READ COMMAND ---
+                if (commandName === 'read') {
+                    const action = args[0]?.toLowerCase();
+                    if (action === 'on' || action === 'off') {
+                        if (!botData.readSettings[this.userId]) botData.readSettings[this.userId] = {};
+                        botData.readSettings[this.userId].enabled = action === 'on';
+                        saveBotData();
+                        return await this.sock.sendMessage(from, { text: `✅ *Auto-Read is now ${action.toUpperCase()}*${WATERMARK}` }, { quoted: msg });
+                    } else {
+                        const current = botData.readSettings[this.userId]?.enabled !== false ? 'ON' : 'OFF';
+                        return await this.sock.sendMessage(from, { text: `📖 *READ SETTINGS*\n\nCurrent: *${current}*\n\nUsage:\n.read on\n.read off${WATERMARK}` }, { quoted: msg });
+                    }
+                }
+
+                // --- TRIHAT & WEBSITES ---
+                if (commandName === 'trihat') {
+                    return await this.sock.sendMessage(from, { text: `🎩 *INCISIVE TRI-HAT TOOLS*\n\nWelcome to the hacker suite.\nAll tools are fully operational.${WATERMARK}` }, { quoted: msg });
+                }
+                if (commandName === 'websites') {
+                    return await this.sock.sendMessage(from, { text: `🌐 *OFFICIAL WEBSITES*\n\nPortfolio: https://blacknite.dev\nChannel: ${MY_CHANNEL_URL}${WATERMARK}` }, { quoted: msg });
+                }
+
+                // --- KICK (ADMIN) ---
+                if (commandName === 'kick') {
+                    const isGroup = from.endsWith('@g.us');
+                    if (!isGroup) return await this.sock.sendMessage(from, { text: `❌ *This command is for groups only.*` }, { quoted: msg });
+                    
+                    // Check if sender is group admin or bot owner
+                    const groupMetadata = await this.sock.groupMetadata(from);
+                    const participant = groupMetadata.participants.find(p => p.id === senderId);
+                    const isAdmin = participant?.admin === 'admin' || participant?.admin === 'superadmin';
+                    
+                    if (!isAdmin && !isOwner) return await this.sock.sendMessage(from, { text: `❌ *Only admin can use this command.*` }, { quoted: msg });
+                    
+                    const mentioned = msg.message.extendedTextMessage?.contextInfo?.mentionedJid || [];
+                    if (mentioned.length === 0) return await this.sock.sendMessage(from, { text: `⚠️ *Mention a user to kick.*` }, { quoted: msg });
+                    
+                    try {
+                        await this.sock.groupParticipantsUpdate(from, [mentioned[0]], 'remove');
+                        return await this.sock.sendMessage(from, { text: `✅ *User kicked successfully.*${WATERMARK}` });
+                    } catch (e) {
+                        return await this.sock.sendMessage(from, { text: `❌ *Failed to kick user. Make sure I am admin.*` });
+                    }
+                }
+
+                // ==========================================
+                // DYNAMIC COMMANDS (FROM FOLDER)
+                // ==========================================
+                const isPublic = (() => {
+                    try {
+                        const data = JSON.parse(fs.readFileSync('./data/messageCount.json'));
+                        return data.isPublic !== false;
+                    } catch { return true; }
+                })();
+
+                if (!isPublic && !isOwner) return;
+
                 if (commands[commandName]) {
                     try {
-                        await commands[commandName](this.sock, from, msg, q, this, botData, saveBotData, args);
+                        // Pass isOwner, isGroup, senderId for the command files
+                        await commands[commandName](this.sock, from, msg, q, this, botData, saveBotData, args, isOwner);
                     } catch (e) { 
                         this.sendLog(`Error .${commandName}: ${e.message}`, 'error'); 
                         await this.sock.sendMessage(from, { text: `⚠️ *Command .${commandName} failed.*${WATERMARK}` }, { quoted: msg });
                     }
                 } else {
+                    // Fallback for unknown commands
                     await this.sock.sendMessage(from, { text: `⚠️ *Command .${commandName} not found.*${WATERMARK}` }, { quoted: msg });
                 }
             });
 
-            // ============================================================
-            // CONNECTION LISTENER (BANNER)
-            // ============================================================
             this.sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect } = update;
-                
                 if (connection === 'close') {
                     this.isConnected = false;
                     this.isInitializing = false;
                     this.sendLog(`⚠️ Link dropped. Auto-restoring...`, 'warning');
                     setTimeout(() => this.initialize(), 3000);
-                } 
-                else if (connection === 'open') {
+                } else if (connection === 'open') {
                     this.isConnected = true;
                     this.isInitializing = false;
                     this.sendLog('🎉 SESSION LINKED — INFINITE MODE', 'success');
                     
-                    // FIX: Properly format JID for banner
-                    const botJid = this.sock.user.id;
-                    const botNumber = botJid.split(':')[0].split('@')[0];
+                    const botNumber = this.sock.user.id.split(':')[0].split('@')[0];
                     const formattedJid = `${botNumber}@s.whatsapp.net`;
-                    
-                    // Send connection banner
                     await sendConnectionBanner(this.sock, formattedJid);
                     
                     const socketId = userSockets[this.userId];
