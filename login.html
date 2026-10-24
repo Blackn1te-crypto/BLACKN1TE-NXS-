@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BL@CKN1TE-NXS | Secure Access</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Blackn1te-crypto/BLACKN1TE-NXS/main/logo.png">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/Blackn1te-crypto/BLACKN1TE-NXS/main/logo.png">
+    <meta name="theme-color" content="#05070d">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* ===== ROOT ===== */
+        :root {
+            --primary: #00ff9d;
+            --primary-dim: #00cc7a;
+            --accent: #7c3aed;
+            --accent-2: #06b6d4;
+            --bg: #05070d;
+            --text: #e6f1ff;
+            --muted: #6b7a90;
+            --border: rgba(0, 255, 157, 0.15);
+            --danger: #ff3b5c;
+            --warning: #ffb020;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body { min-height: 100vh; overflow: hidden; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains Mono', 'Segoe UI', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* ===== BACKGROUND ===== */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 255, 157, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 157, 0.04) 1px, transparent 1px);
+            background-size: 45px 45px;
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 45px 45px; }
+        }
+
+        .bg-glow {
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(124, 58, 237, 0.22), transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(0, 255, 157, 0.15), transparent 45%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: fixed;
+            width: 3px; height: 3px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+            animation: floatUp linear infinite;
+            z-index: 1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+            10%  { opacity: 0.8; }
+            90%  { opacity: 0.6; }
+            100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+        }
+
+        /* ===== LOGIN ===== */
+        .login-wrap {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(15, 20, 32, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 40px 32px 32px;
+            box-shadow: 0 0 60px rgba(0, 255, 157, 0.12), 0 0 120px rgba(124, 58, 237, 0.08);
+            animation: cardEntrance 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: scale(0.9) translateY(40px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .login-logo {
+            width: 100px; height: 100px;
+            margin: 0 auto 22px;
+            display: block;
+            border-radius: 26px;
+            object-fit: cover;
+            padding: 4px;
+            background: rgba(0, 255, 157, 0.05);
+            border: 2px solid rgba(0, 255, 157, 0.4);
+            filter: drop-shadow(0 0 25px rgba(0, 255, 157, 0.55));
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+
+        .login-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            text-align: center;
+            background: linear-gradient(90deg, var(--primary), var(--accent-2), var(--accent), var(--primary));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: shine 4s linear infinite;
+            margin-bottom: 8px;
+        }
+        @keyframes shine {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .login-subtitle {
+            font-size: 0.78rem;
+            color: var(--primary);
+            letter-spacing: 3px;
+            text-align: center;
+            margin-bottom: 26px;
+            min-height: 20px;
+        }
+        .typing-cursor::after {
+            content: '▊';
+            animation: blink 1s step-end infinite;
+            color: var(--primary);
+            margin-left: 2px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .live-monitor {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 24px;
+            padding: 10px 16px;
+            background: rgba(0, 255, 157, 0.04);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            border-radius: 50px;
+            font-size: 0.68rem;
+            letter-spacing: 2px;
+            color: var(--primary);
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(0.65); }
+        }
+
+        .field { margin-bottom: 18px; }
+        .field-label {
+            display: block;
+            font-size: 0.68rem;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .field-input-wrap { position: relative; }
+        .field-icon {
+            position: absolute;
+            left: 16px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+        .field input {
+            width: 100%;
+            padding: 14px 48px 14px 46px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.92rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        .field input::placeholder { color: var(--muted); opacity: 0.55; }
+        .field input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 255, 157, 0.12);
+        }
+
+        .toggle-pass {
+            position: absolute;
+            right: 14px; top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 6px;
+        }
+        .toggle-pass:hover { color: var(--primary); }
+
+        .login-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+        .login-options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+        .login-options input[type="checkbox"] {
+            appearance: none;
+            width: 16px; height: 16px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            position: relative;
+        }
+        .login-options input[type="checkbox"]:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .login-options input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: #05070d;
+            font-weight: 900;
+            font-size: 0.7rem;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dim));
+            border: none;
+            border-radius: 12px;
+            color: #05070d;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(0, 255, 157, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .login-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 255, 157, 0.55);
+        }
+        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .login-error {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(255, 59, 92, 0.12);
+            border: 1px solid var(--danger);
+            border-radius: 10px;
+            color: var(--danger);
+            font-size: 0.78rem;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .login-error.show { display: block; animation: shake 0.4s ease; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 255, 157, 0.1);
+            font-size: 0.68rem;
+            color: var(--muted);
+            letter-spacing: 1.5px;
+        }
+        .login-footer .brand {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 3px;
+            font-size: 0.75rem;
+            margin-bottom: 6px;
+        }
+
+        /* ============================================================ */
+        /* HELP LINK (top-right of options)                              */
+        /* ============================================================ */
+        .help-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: 0.25s;
+            user-select: none;
+        }
+        .help-link:hover {
+            background: rgba(0, 255, 157, 0.1);
+            border-color: rgba(0, 255, 157, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* ============================================================ */
+        /* NEXUS MODAL (cyberpunk help panel)                            */
+        /* ============================================================ */
+        .nexus-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.25s ease;
+        }
+        .nexus-modal.open { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .nexus-modal-box {
+            width: 100%;
+            max-width: 460px;
+            background: #05070d;
+            border: 1px solid var(--primary);
+            border-radius: 18px;
+            box-shadow: 0 0 60px rgba(0, 255, 157, 0.35), inset 0 0 40px rgba(0, 255, 157, 0.03);
+            overflow: hidden;
+            animation: modalPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+            position: relative;
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.85) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .nexus-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(0, 255, 157, 0.25);
+            background: rgba(0, 255, 157, 0.03);
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1.5px;
+        }
+        .nexus-modal-close {
+            cursor: pointer;
+            font-size: 1.15rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+        .nexus-modal-close:hover {
+            color: #fff;
+            background: rgba(0, 255, 157, 0.15);
+            transform: rotate(90deg);
+        }
+
+        .nexus-modal-body {
+            padding: 22px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #ccc;
+            font-size: 0.85rem;
+            line-height: 1.7;
+        }
+
+        .help-block {
+            margin-bottom: 18px;
+        }
+        .help-block h3 {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .help-block p {
+            color: #b8c5d6;
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+        }
+
+        .help-contacts a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 12px 14px;
+            border: 1px solid rgba(0, 255, 157, 0.35);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: rgba(0, 255, 157, 0.04);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 0.85rem;
+        }
+        .help-contacts a:hover {
+            background: rgba(0, 255, 157, 0.12);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 157, 0.25);
+        }
+        .help-contacts a i {
+            font-size: 1.3rem;
+            color: #25D366;
+            filter: drop-shadow(0 0 8px rgba(37, 211, 102, 0.6));
+        }
+        .help-contacts a .num {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .help-contacts a .sub {
+            color: var(--muted);
+            font-size: 0.7rem;
+        }
+
+        .help-tip {
+            background: rgba(124, 58, 237, 0.08);
+            border: 1px dashed rgba(124, 58, 237, 0.4);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.78rem;
+            color: #b8b8d6;
+            margin-top: 12px;
+        }
+        .help-tip i { color: var(--accent); margin-right: 6px; }
+
+        /* ============================================================ */
+        /* LOADING OVERLAY                                              */
+        /* ============================================================ */
+        .entering-overlay {
+            position: fixed; inset: 0;
+            background: rgba(5, 7, 13, 0.97);
+            backdrop-filter: blur(12px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .entering-overlay.show { display: flex; }
+
+        .entering-logo-wrap { position: relative; margin-bottom: 30px; }
+        .entering-logo {
+            width: 90px; height: 90px;
+            border-radius: 22px;
+            object-fit: cover;
+            border: 2px solid rgba(0, 255, 157, 0.4);
+            padding: 4px;
+            background: rgba(0, 255, 157, 0.05);
+            filter: drop-shadow(0 0 25px rgba(0, 255, 157, 0.7));
+            animation: logoPulse2 2s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+        }
+        @keyframes logoPulse2 {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+        .entering-ring {
+            position: absolute;
+            inset: -14px;
+            border-radius: 32px;
+            border: 2px solid transparent;
+            border-top-color: var(--primary);
+            border-right-color: var(--accent-2);
+            animation: spinRing 1.6s linear infinite;
+            z-index: 1;
+        }
+        .entering-ring-2 {
+            position: absolute;
+            inset: -24px;
+            border-radius: 40px;
+            border: 1px solid transparent;
+            border-bottom-color: var(--accent);
+            border-left-color: var(--primary);
+            animation: spinRing 2.4s linear infinite reverse;
+            z-index: 0;
+        }
+        @keyframes spinRing { to { transform: rotate(360deg); } }
+
+        .entering-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: var(--primary);
+            letter-spacing: 4px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .entering-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: #888;
+            letter-spacing: 2px;
+            margin-bottom: 22px;
+            min-height: 18px;
+        }
+
+        .entering-progress-wrap { width: 320px; max-width: 90vw; }
+        .entering-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.72rem;
+            color: #666;
+            letter-spacing: 1px;
+        }
+        .entering-progress-header .pct {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .entering-bar-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 255, 157, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(0, 255, 157, 0.15);
+        }
+        .entering-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent-2), var(--accent));
+            background-size: 200% 100%;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.8);
+            transition: width 0.25s ease;
+            animation: gradientShift 2s linear infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        .entering-bar-shine {
+            position: absolute;
+            top: 0; left: -50%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            animation: shineSweep 1.8s ease-in-out infinite;
+        }
+        @keyframes shineSweep {
+            0% { left: -50%; }
+            100% { left: 100%; }
+        }
+
+        @media (max-width: 500px) {
+            .login-card { padding: 32px 22px 26px; border-radius: 18px; }
+            .login-logo { width: 82px; height: 82px; border-radius: 22px; }
+            .login-title { font-size: 1.25rem; }
+            .entering-logo { width: 75px; height: 75px; }
+            .entering-progress-wrap { width: 260px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+    <div id="particles"></div>
+
+    <!-- LOGIN CARD -->
+    <div class="login-wrap">
+        <div class="login-card">
+
+            <img class="login-logo"
+                 src="https://raw.githubusercontent.com/Blackn1te-crypto/BLACKN1TE-NXS/main/logo.png"
+                 alt="BL@CKN1TE-NXS">
+
+            <h1 class="login-title">𝗕𝗟@𝗖𝗞𝗡𝟭𝗧𝗘-𝗡𝗫𝗦</h1>
+
+            <div class="login-subtitle typing-cursor" id="typingText"></div>
+
+            <div class="live-monitor">
+                <span class="live-dot"></span>
+                <span id="liveStatus">SYSTEM SECURE • CONNECTING...</span>
+            </div>
+
+            <form id="loginForm" autocomplete="off" onsubmit="event.preventDefault(); handleLogin();">
+
+                <div class="field">
+                    <label class="field-label">Username</label>
+                    <div class="field-input-wrap">
+                        <i class="fas fa-user-shield field-icon"></i>
+                        <input type="text" id="usernameInput" placeholder="Enter username"
+                               autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label">Password</label>
+                    <div class="field-input-wrap">
+                        <i class="fas fa-lock field-icon"></i>
+                        <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="new-password">
+                        <button type="button" class="toggle-pass" onclick="togglePassword()">
+                            <i class="fas fa-eye" id="toggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="login-options">
+                    <label>
+                        <input type="checkbox" id="rememberCheck">
+                        <span>Remember this device</span>
+                    </label>
+                    <span class="help-link" onclick="openHelp()">
+                        <i class="fas fa-question-circle"></i> Help
+                    </span>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <i class="fas fa-fingerprint"></i>
+                    <span>AUTHENTICATE</span>
+                </button>
+
+                <div class="login-error" id="loginError"></div>
+            </form>
+
+            <div class="login-footer">
+                <div class="brand">𝗕𝗟@𝗖𝗞𝗡𝟭𝗧𝗘-𝗡𝗫𝗦</div>
+                <div>Powered by BL@CKN1TE THE INCISIVE TRI-HAT HACKER</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HELP MODAL -->
+    <div id="nexusHelpModal" class="nexus-modal">
+        <div class="nexus-modal-box">
+            <div class="nexus-modal-header">
+                <span><i class="fas fa-shield-alt"></i> &nbsp;HELP &amp; SUPPORT</span>
+                <span class="nexus-modal-close" onclick="closeHelp()"><i class="fas fa-times"></i></span>
+            </div>
+            <div class="nexus-modal-body">
+
+                <div class="help-block">
+                    <h3><i class="fas fa-key"></i> ACCESS CREDENTIALS</h3>
+                    <p>This is a private control panel. Only the bot owner has valid credentials.</p>
+                    <p style="color:#888;font-size:0.75rem;">If you've forgotten your login, contact the owner directly via WhatsApp below.</p>
+                </div>
+
+                <div class="help-block">
+                    <h3><i class="fab fa-whatsapp"></i> CONTACT OWNER</h3>
+                    <div class="help-contacts">
+                        <a href="https://wa.me/263780540231?text=Hello%20BL@CKN1TE,%20I%20need%20help%20with%20my%20account!"
+                           target="_blank">
+                            <i class="fab fa-whatsapp"></i>
+                            <div>
+                                <div class="num">+263 780 540 231</div>
+                                <div class="sub">Primary contact</div>
+                            </div>
+                        </a>
+                        <a href="https://wa.me/263714799483?text=Hello%20BL@CKN1TE,%20I%20need%20help%20with%20my%20account!"
+                           target="_blank">
+                            <i class="fab fa-whatsapp"></i>
+                            <div>
+                                <div class="num">+263 714 799 483</div>
+                                <div class="sub">Alternate contact</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="help-block">
+                    <h3><i class="fas fa-terminal"></i> QUICK TIPS</h3>
+                    <p>• Username is <b style="color:#00ff9d;">case-sensitive</b></p>
+                    <p>• Two passwords are valid — try both if one fails</p>
+                    <p>• Tick "Remember this device" to skip login for 30 minutes</p>
+                </div>
+
+                <div class="help-tip">
+                    <i class="fas fa-lightbulb"></i>
+                    Response time is usually within <b>1 hour</b>. Please include a screenshot of your issue if possible.
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div class="entering-overlay" id="enteringOverlay">
+        <div class="entering-logo-wrap">
+            <div class="entering-ring-2"></div>
+            <div class="entering-ring"></div>
+            <img class="entering-logo"
+                 src="https://raw.githubusercontent.com/Blackn1te-crypto/BLACKN1TE-NXS/main/logo.png"
+                 alt="BL@CKN1TE-NXS">
+        </div>
+        <div class="entering-text" id="enteringBigText">AUTHENTICATING</div>
+        <div class="entering-status" id="enteringStatus">Verifying credentials...</div>
+        <div class="entering-progress-wrap">
+            <div class="entering-progress-header">
+                <span id="enteringStage">SECURE ACCESS</span>
+                <span class="pct" id="enteringPercent">0%</span>
+            </div>
+            <div class="entering-bar-track">
+                <div class="entering-bar-fill" id="enteringBar"></div>
+                <div class="entering-bar-shine"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // CONFIG
+        // ============================================================
+        const SESSION_KEY = 'nexusAuth';
+        const SESSION_TTL = 30 * 60 * 1000;
+        const DASHBOARD_URL = '/index.html';
+
+        const VALID_USERS = {
+            'Bl@ckn1te': ['0506', '7147']
+        };
+
+        // ============================================================
+        // CLEAR INPUTS ON LOAD
+        // ============================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            const u = document.getElementById('usernameInput');
+            const p = document.getElementById('passwordInput');
+            if (u) u.value = '';
+            if (p) p.value = '';
+            setTimeout(() => {
+                if (u) u.value = '';
+                if (p) p.value = '';
+            }, 100);
+
+            try {
+                let raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+                if (raw) {
+                    const s = JSON.parse(raw);
+                    if (s && s.timestamp && (Date.now() - s.timestamp < SESSION_TTL)) {
+                        runLoadingSequence('WELCOME BACK');
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            // Close help modal on ESC
+            document.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Escape') closeHelp();
+            });
+        });
+
+        // ============================================================
+        // PARTICLES
+        // ============================================================
+        (function () {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDuration = (8 + Math.random() * 10) + 's';
+                p.style.animationDelay = (Math.random() * 8) + 's';
+                const size = 2 + Math.random() * 3;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                container.appendChild(p);
+            }
+        })();
+
+        // ============================================================
+        // TYPING ANIMATION
+        // ============================================================
+        const TYPING_PHRASES = [
+            'SECURE ACCESS TERMINAL',
+            'AUTHENTICATING NEXUS CORE...',
+            'BL@CKN1TE-NXS CONTROL PANEL',
+            'TRI-HAT HACKER PROTOCOL',
+            'ENTER CREDENTIALS TO CONTINUE'
+        ];
+        let typingIndex = 0, charIndex = 0, isDeleting = false;
+        const typingEl = document.getElementById('typingText');
+
+        function typeLoop() {
+            if (!typingEl) return;
+            const phrase = TYPING_PHRASES[typingIndex];
+            if (!isDeleting) {
+                typingEl.textContent = phrase.substring(0, charIndex + 1);
+                charIndex++;
+                if (charIndex === phrase.length) {
+                    isDeleting = true;
+                    setTimeout(typeLoop, 2000);
+                    return;
+                }
+            } else {
+                typingEl.textContent = phrase.substring(0, charIndex - 1);
+                charIndex--;
+                if (charIndex === 0) {
+                    isDeleting = false;
+                    typingIndex = (typingIndex + 1) % TYPING_PHRASES.length;
+                }
+            }
+            setTimeout(typeLoop, isDeleting ? 40 : 80);
+        }
+        setTimeout(typeLoop, 400);
+
+        // ============================================================
+        // LIVE STATUS
+        // ============================================================
+        const LIVE_STATES = [
+            { text: 'SYSTEM SECURE • ONLINE', color: '#00ff9d' },
+            { text: 'FIREWALL ACTIVE • PROTECTED', color: '#00ff9d' },
+            { text: 'NEXUS CORE • STABLE', color: '#00ff9d' },
+            { text: 'ENCRYPTION • 256-BIT AES', color: '#06b6d4' },
+            { text: 'TRI-HAT HACKER • READY', color: '#00ff9d' }
+        ];
+        let liveIndex = 0;
+        setInterval(() => {
+            liveIndex = (liveIndex + 1) % LIVE_STATES.length;
+            const el = document.getElementById('liveStatus');
+            if (el) {
+                el.textContent = LIVE_STATES[liveIndex].text;
+                el.style.color = LIVE_STATES[liveIndex].color;
+                el.style.transition = 'color 0.5s ease';
+            }
+        }, 3000);
+
+        // ============================================================
+        // PASSWORD TOGGLE
+        // ============================================================
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.getElementById('toggleIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // ============================================================
+        // HELP MODAL
+        // ============================================================
+        function openHelp() {
+            const m = document.getElementById('nexusHelpModal');
+            if (m) m.classList.add('open');
+        }
+        function closeHelp() {
+            const m = document.getElementById('nexusHelpModal');
+            if (m) m.classList.remove('open');
+        }
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            const m = document.getElementById('nexusHelpModal');
+            if (!m || !m.classList.contains('open')) return;
+            if (e.target === m) closeHelp();
+        });
+
+        // ============================================================
+        // LOGIN HANDLER
+        // ============================================================
+        function handleLogin() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+            const remember = document.getElementById('rememberCheck').checked;
+            const errorEl = document.getElementById('loginError');
+            const btn = document.getElementById('loginBtn');
+
+            errorEl.classList.remove('show');
+
+            if (!username || !password) {
+                errorEl.innerText = '❌ Username and password required';
+                errorEl.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>AUTHENTICATING...</span>';
+
+            setTimeout(() => {
+                const validPasswords = VALID_USERS[username];
+                if (validPasswords && validPasswords.includes(password)) {
+                    try {
+                        const data = JSON.stringify({ user: username, timestamp: Date.now() });
+                        if (remember) localStorage.setItem(SESSION_KEY, data);
+                        else sessionStorage.setItem(SESSION_KEY, data);
+                    } catch (e) {}
+
+                    runLoadingSequence('ACCESS GRANTED');
+                } else {
+                    errorEl.innerText = '❌ Invalid credentials — Access denied';
+                    errorEl.classList.add('show');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-fingerprint"></i> <span>AUTHENTICATE</span>';
+
+                    errorEl.style.animation = 'none';
+                    void errorEl.offsetHeight;
+                    errorEl.style.animation = 'shake 0.4s ease';
+                }
+            }, 700);
+        }
+
+        // ============================================================
+        // LOADING SEQUENCE (5 seconds → dashboard)
+        // ============================================================
+        function runLoadingSequence(bigLabel) {
+            const overlay = document.getElementById('enteringOverlay');
+            overlay.classList.add('show');
+
+            const bar = document.getElementById('enteringBar');
+            const percentText = document.getElementById('enteringPercent');
+            const stageText = document.getElementById('enteringStage');
+            const statusText = document.getElementById('enteringStatus');
+            const bigText = document.getElementById('enteringBigText');
+
+            if (bigText) bigText.innerText = bigLabel || 'INITIALIZING';
+
+            const stages = [
+                { at: 0,   label: 'SECURE ACCESS',   msg: 'Verifying credentials...',     big: bigLabel || 'AUTHENTICATING' },
+                { at: 15,  label: 'AUTHORIZING',     msg: 'Checking permissions...',      big: 'AUTHORIZING' },
+                { at: 35,  label: 'CONNECTING',      msg: 'Establishing secure link...',  big: 'CONNECTING' },
+                { at: 55,  label: 'LOADING MODULES', msg: 'Fetching command registry...', big: 'LOADING MODULES' },
+                { at: 75,  label: 'SYNCING',         msg: 'Syncing dashboard state...',   big: 'SYNCING' },
+                { at: 90,  label: 'OPTIMIZING',      msg: 'Applying final touches...',    big: 'OPTIMIZING' },
+                { at: 100, label: 'READY',           msg: 'Opening dashboard...',         big: 'READY ✅' }
+            ];
+
+            let progress = 0;
+            const TOTAL_TIME = 5000;
+            const STEP = 50;
+            const STEPS = TOTAL_TIME / STEP;
+            const INCREMENT = 100 / STEPS;
+
+            const interval = setInterval(() => {
+                progress += INCREMENT;
+                if (progress > 100) progress = 100;
+
+                bar.style.width = progress + '%';
+                percentText.innerText = Math.floor(progress) + '%';
+
+                const stage = stages.slice().reverse().find(s => progress >= s.at);
+                if (stage) {
+                    stageText.innerText = stage.label;
+                    statusText.innerText = stage.msg;
+                    if (bigText && progress < 100) bigText.innerText = stage.big;
+                }
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => { window.location.href = DASHBOARD_URL; }, 400);
+                }
+            }, STEP);
+        }
+    </script>
+</body>
+</html>
