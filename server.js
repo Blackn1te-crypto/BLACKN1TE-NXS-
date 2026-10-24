@@ -21,7 +21,6 @@ const {
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
-    downloadContentFromMessage,
     jidNormalizedUser,
     Browsers,
     delay
@@ -46,82 +45,37 @@ const OWNER_NUMBERS = [
     "+263780540231"
 ];
 
-// ============================================================
-// ♾️ INFINITE CONNECTION FLAGS
-// ============================================================
-const INFINITE_MODE = true;
-const HEARTBEAT_INTERVAL_MS = 45 * 1000;
-const AUTO_RELOAD_INTERVAL_MS = 5 * 60 * 1000;
-const SESSION_WATCHDOG_MS = 60 * 1000;
-const KEEPALIVE_PRESENCE_MS = 60 * 1000;
+const WATERMARK = "\n\n> 🌟 *Powered by BL@CKN1TE THE INCISIVE TRI-HAT HACKER* 🌟";
 
 // ============================================================
-// SAFE COMMAND LOADER
+// RANDOM EMOJI REACTIONS
 // ============================================================
-function safeRequire(filePath, name) {
-    try {
-        if (fs.existsSync(filePath) || fs.existsSync(filePath + '.js')) {
-            return require(filePath);
-        }
-        return async function stub(sock, from, msg) {
-            try { await sock.sendMessage(from, { text: `⚠️ *Command .${name} unavailable.*` }, { quoted: msg }); } catch (e) {}
-        };
-    } catch (e) {
-        return async function stub(sock, from, msg) {
-            try { await sock.sendMessage(from, { text: `⚠️ *Command .${name} failed to load.*` }, { quoted: msg }); } catch (e) {}
-        };
+const RANDOM_REACTIONS = ['⚡', '🔥', '✨', '🌟', '💫', '🎯', '🚀', '💥', '👑', '💎', '🎉', '✅', '🤖', '😎', '🙌', '👏', '💯', '🪄', '🧿', '🍀', '🌈', '❤️', '👍'];
+function getRandomEmoji() { return RANDOM_REACTIONS[Math.floor(Math.random() * RANDOM_REACTIONS.length)]; }
+
+// ============================================================
+// DYNAMIC COMMAND LOADER (Loads all 140+ commands safely)
+// ============================================================
+const commands = {};
+function loadCommands() {
+    if (!fs.existsSync(CMD_DIR)) {
+        fs.ensureDirSync(CMD_DIR);
+        return;
     }
+    const files = fs.readdirSync(CMD_DIR);
+    for (const file of files) {
+        if (file.endsWith('.js')) {
+            const cmdName = file.replace('.js', '').toLowerCase();
+            try {
+                commands[cmdName] = require(path.join(CMD_DIR, file));
+            } catch (e) {
+                console.error(`❌ [CMD] Failed to load ${cmdName}: ${e.message}`);
+            }
+        }
+    }
+    console.log(`✅ [CMD] Loaded ${Object.keys(commands).length} commands.`);
 }
-
-// All 140+ commands synced
-const commands = {
-    ping: safeRequire(path.join(CMD_DIR, 'ping'), 'ping'),
-    owner: safeRequire(path.join(CMD_DIR, 'owner'), 'owner'),
-    song: safeRequire(path.join(CMD_DIR, 'song'), 'song'),
-    video: safeRequire(path.join(CMD_DIR, 'video'), 'video'),
-    tiktok: safeRequire(path.join(CMD_DIR, 'tiktok'), 'tiktok'),
-    insta: safeRequire(path.join(CMD_DIR, 'insta'), 'insta'),
-    facebook: safeRequire(path.join(CMD_DIR, 'facebook'), 'facebook'),
-    gdrive: safeRequire(path.join(CMD_DIR, 'gdrive'), 'gdrive'),
-    mf: safeRequire(path.join(CMD_DIR, 'mf'), 'mf'),
-    apk: safeRequire(path.join(CMD_DIR, 'apk'), 'apk'),
-    dp: safeRequire(path.join(CMD_DIR, 'dp'), 'dp'),
-    vv: safeRequire(path.join(CMD_DIR, 'vv'), 'vv'),
-    ai: safeRequire(path.join(CMD_DIR, 'ai'), 'ai'),
-    image: safeRequire(path.join(CMD_DIR, 'image'), 'image'),
-    tts: safeRequire(path.join(CMD_DIR, 'tts'), 'tts'),
-    translate: safeRequire(path.join(CMD_DIR, 'translate'), 'translate'),
-    character: safeRequire(path.join(CMD_DIR, 'character'), 'character'),
-    emojimix: safeRequire(path.join(CMD_DIR, 'emojimix'), 'emojimix'),
-    joke: safeRequire(path.join(CMD_DIR, 'joke'), 'joke'),
-    meme: safeRequire(path.join(CMD_DIR, 'meme'), 'meme'),
-    weather: safeRequire(path.join(CMD_DIR, 'weather'), 'weather'),
-    qr: safeRequire(path.join(CMD_DIR, 'qr'), 'qr'),
-    shorten: safeRequire(path.join(CMD_DIR, 'shorten'), 'shorten'),
-    calc: safeRequire(path.join(CMD_DIR, 'calc'), 'calc'),
-    antilink: safeRequire(path.join(CMD_DIR, 'antilink'), 'antilink'),
-    anticall: safeRequire(path.join(CMD_DIR, 'anticall'), 'anticall'),
-    antidelete: safeRequire(path.join(CMD_DIR, 'antidelete'), 'antidelete'),
-    antistatus: safeRequire(path.join(CMD_DIR, 'antistatus'), 'antistatus'),
-    autoreacts: safeRequire(path.join(CMD_DIR, 'autoreacts'), 'autoreacts'),
-    autostatus: safeRequire(path.join(CMD_DIR, 'status'), 'status'),
-    kick: safeRequire(path.join(CMD_DIR, 'kick'), 'kick'),
-    kickoffline: safeRequire(path.join(CMD_DIR, 'kickoffline'), 'kickoffline'),
-    hidetag: safeRequire(path.join(CMD_DIR, 'hidetag'), 'hidetag'),
-    tagall: safeRequire(path.join(CMD_DIR, 'tagall'), 'tagall'),
-    setname: safeRequire(path.join(CMD_DIR, 'setname'), 'setname'),
-    groupinfo: safeRequire(path.join(CMD_DIR, 'groupinfo'), 'groupinfo'),
-    accept: safeRequire(path.join(CMD_DIR, 'accept'), 'accept'),
-    hack: safeRequire(path.join(CMD_DIR, 'hack'), 'hack'),
-    private: safeRequire(path.join(CMD_DIR, 'private'), 'private'),
-    public: safeRequire(path.join(CMD_DIR, 'public'), 'public'),
-    autoread: safeRequire(path.join(CMD_DIR, 'autoread'), 'autoread'),
-    read: safeRequire(path.join(CMD_DIR, 'read'), 'read'),
-    online: safeRequire(path.join(CMD_DIR, 'online'), 'online'),
-    incisiveTrihatTools: safeRequire(path.join(CMD_DIR, 'incisive-trihat-tools'), 'incisive-trihat-tools'),
-    blackn1teWebsites: safeRequire(path.join(CMD_DIR, 'blackn1te-websites'), 'blackn1te-websites'),
-    settings: safeRequire(path.join(CMD_DIR, 'settings'), 'settings')
-};
+loadCommands();
 
 // ============================================================
 // APP + SOCKET
@@ -164,13 +118,15 @@ const userSockets = {};
 async function sendUltimateMenu(sock, from, msg, session, pushName) {
     const menu = `
 ╭───────────────────────────⭓
-│  *BL@CKN1TE-NXS* ⚡
-│  *User:* ${pushName}
-│  *Prefix:* [ . / > ]
-│  *Status:* 🟢 ONLINE
+│  ✦ *BL@CKN1TE-NXS* ✦
+│  ───────────────────────────
+│  👤 *User:* ${pushName}
+│  ⚡ *Prefix:* [ . / > ]
+│  🟢 *Status:* Online
+│  ♾️ *Mode:* Infinite
 ╰───────────────────────────⭓
 
-┏━━━━━━━━〔 *USER CORE* 〕━━━━━━━━
+┏━━━━━━━━〔 𝗨𝗦𝗘𝗥 𝗖𝗢𝗥𝗘 〕━━━━━━━━
 ┃ ➤ .ai
 ┃ ➤ .img
 ┃ ➤ .read
@@ -180,7 +136,7 @@ async function sendUltimateMenu(sock, from, msg, session, pushName) {
 ┃ ➤ .owner
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-┏━━━━━━━━〔 *MEDIA VAULT* 〕━━━━━━━
+┏━━━━━━━━〔 𝗠𝗘𝗗𝗜𝗔 𝗩𝗔𝗨𝗟𝗧 〕━━━━━━━━
 ┃ ➤ .song
 ┃ ➤ .video
 ┃ ➤ .tiktok
@@ -190,7 +146,7 @@ async function sendUltimateMenu(sock, from, msg, session, pushName) {
 ┃ ➤ .apk
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-┏━━━━━━━━〔 *GROUP ADMIN* 〕━━━━━━━
+┏━━━━━━━━〔 𝗚𝗥𝗢𝗨𝗣 𝗔𝗗𝗠𝗜𝗡 〕━━━━━━━━
 ┃ ➤ .kick
 ┃ ➤ .promote
 ┃ ➤ .demote
@@ -201,7 +157,7 @@ async function sendUltimateMenu(sock, from, msg, session, pushName) {
 ┃ ➤ .accept
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-┏━━━━━━━━〔 *SECURITY & UTILS* 〕━━━━
+┏━━━━━━━━〔 𝗦𝗘𝗖𝗨𝗥𝗜𝗧𝗬 〕━━━━━━━━
 ┃ ➤ .antilink
 ┃ ➤ .anticall
 ┃ ➤ .antidelete
@@ -212,7 +168,7 @@ async function sendUltimateMenu(sock, from, msg, session, pushName) {
 ┃ ➤ .settings
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-┏━━━━━━━━〔 *FUN & TOOLS* 〕━━━━━━━
+┏━━━━━━━━〔 𝗙𝗨𝗡 & 𝗧𝗢𝗢𝗟𝗦 〕━━━━━━━━
 ┃ ➤ .meme
 ┃ ➤ .joke
 ┃ ➤ .quote
@@ -224,7 +180,7 @@ async function sendUltimateMenu(sock, from, msg, session, pushName) {
 ┃ ➤ .emojimix
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-┏━━━━━━━━〔 *OWNER ZONE* 〕━━━━━━━
+┏━━━━━━━━〔 𝗢𝗪𝗡𝗘𝗥 𝗭𝗢𝗡𝗘 〕━━━━━━━━
 ┃ ➤ .hack
 ┃ ➤ .trihat
 ┃ ➤ .websites
@@ -233,8 +189,7 @@ async function sendUltimateMenu(sock, from, msg, session, pushName) {
 ╭───────────────────────────⭓
 │ 🔗 *Join Our Channel*
 │ ${MY_CHANNEL_URL}
-│ ⚡ *Powered by BL@CKN1TE*
-│ 🎩 *THE INCISIVE TRI-HAT*
+│ 🎩 *THE INCISIVE TRI-HAT HACKER*
 ╰───────────────────────────⭓
     `;
 
@@ -243,7 +198,6 @@ async function sendUltimateMenu(sock, from, msg, session, pushName) {
         await sock.sendMessage(from, {
             text: menu,
             contextInfo: {
-                // No isForwarded and no forwardingScore so it's native
                 forwardedNewsletterMessageInfo: {
                     newsletterJid: MY_CHANNEL_JID,
                     newsletterName: MY_CHANNEL_NAME,
@@ -278,8 +232,7 @@ async function sendConnectionBanner(sock, userId) {
 ║  ♾️  Mode: INFINITE
 ║  🔗 Channel: Connected
 ╚══════════════════════════════════════╝
-
-> 🌟 *Powered by BL@CKN1TE THE INCISIVE TRI-HAT* 🌟
+${WATERMARK}
     `;
 
     try {
@@ -361,18 +314,26 @@ class BotSession {
 
                 const commandName = cmd.slice(matchedPrefix.length).split(' ')[0];
 
+                // Send Random Emoji Reaction
+                try { await this.sock.sendMessage(from, { react: { text: getRandomEmoji(), key: msg.key } }); } catch (e) {}
+
                 if (commandName === 'menu' || commandName === 'help' || commandName === 'start') {
                     return await sendUltimateMenu(this.sock, from, msg, this, msg.pushName || 'User');
                 }
                 
                 if (commandName === 'owner') {
-                    return await this.sock.sendMessage(from, { text: `👑 *BL@CKN1TE-NXS OWNER*\n\n📞 ${OWNER_NUMBERS[0]}\n📞 ${OWNER_NUMBERS[1]}\n\n> 🌟 *Powered by BL@CKN1TE THE INCISIVE TRI-HAT* 🌟` }, { quoted: msg });
+                    return await this.sock.sendMessage(from, { text: `👑 *BL@CKN1TE-NXS OWNER*\n\n📞 ${OWNER_NUMBERS[0]}\n📞 ${OWNER_NUMBERS[1]}${WATERMARK}` }, { quoted: msg });
                 }
 
                 if (commands[commandName]) {
                     try {
                         await commands[commandName](this.sock, from, msg, q, this, botData, saveBotData, args);
-                    } catch (e) { this.sendLog(`Error .${commandName}: ${e.message}`, 'error'); }
+                    } catch (e) { 
+                        this.sendLog(`Error .${commandName}: ${e.message}`, 'error'); 
+                        await this.sock.sendMessage(from, { text: `⚠️ *Command .${commandName} failed.*${WATERMARK}` }, { quoted: msg });
+                    }
+                } else {
+                    await this.sock.sendMessage(from, { text: `⚠️ *Command .${commandName} not found.*${WATERMARK}` }, { quoted: msg });
                 }
             });
 
@@ -387,7 +348,6 @@ class BotSession {
                     this.isInitializing = false;
                     this.sendLog('🎉 SESSION LINKED — INFINITE MODE', 'success');
                     
-                    // SEND BANNER TO SET THE CHANNEL CACHE CORRECTLY
                     const botNumber = jidNormalizedUser(this.sock.user.id);
                     await sendConnectionBanner(this.sock, botNumber);
                     
